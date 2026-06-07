@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equilia Pro</title>
+
+<link rel="stylesheet" href="styles.css">
+
+</head>
+
+<link rel="stylesheet" href="styles.css">
+<style>
+body{margin:0;font-family:sans-serif;background:#eef2ff;}
+
+/* LOGIN */
+#login{
+height:100vh;
+background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb') center/cover;
+display:flex;justify-content:center;align-items:center;
+}
+.login-box{
+background:rgba(255,255,255,0.9);
+padding:30px;border-radius:20px;text-align:center;
+}
+input{padding:10px;width:90%;margin:5px;}
+button{padding:10px;background:#6C63FF;color:white;border:none;border-radius:10px;}
+
+#app{display:none;padding:10px;}
+
+.card{
+background:white;
+padding:15px;margin:10px 0;
+border-radius:15px;
+}
+
+/* NAV */
+.nav{
+position:fixed;bottom:0;width:100%;
+background:white;display:flex;justify-content:space-around;
+padding:10px;
+}
+
+/* CALENDARIO */
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:5px;
+}
+.day{
+background:#dfe3ff;
+padding:10px;
+border-radius:10px;
+text-align:center;
+cursor:pointer;
+}
+.activeDay{background:#6C63FF;color:white;}
+
+</style>
+</head>
+
+<body>
+
+<div id="login">
+<div class="login-box">
+<h2>Equilia</h2>
+<input id="name" placeholder="Nombre">
+<button onclick="login()">Entrar</button>
+</div>
+</div>
+
+<div id="app">
+
+<h2 id="saludo"></h2>
+
+<div class="card">
+<h3>Tiempo usando la app</h3>
+<p id="tiempo"></p>
+</div>
+
+<div class="card">
+<h3>Calendario de tareas</h3>
+<div class="calendar" id="calendar"></div>
+<input id="taskInput" placeholder="Tarea">
+<button onclick="addTask()">Agregar</button>
+<ul id="tasks"></ul>
+</div>
+
+<div class="card">
+<h3>Podcast (comunidad)</h3>
+<input id="podMsg" placeholder="Comenta">
+<button onclick="postPodcast()">Publicar</button>
+<ul id="podList"></ul>
+</div>
+
+<div class="card">
+<h3>Foro + IA</h3>
+<input id="foroMsg" placeholder="Pregunta o motiva">
+<button onclick="postForo()">Enviar</button>
+<ul id="foroList"></ul>
+</div>
+
+<div class="card">
+<h3>Biblioteca</h3>
+<ul id="libros"></ul>
+</div>
+
+<div class="card">
+<h3>Empleos (IA)</h3>
+<input id="jobInput" placeholder="¿Qué buscas?">
+<button onclick="buscarTrabajo()">Buscar</button>
+<p id="jobResult"></p>
+</div>
+
+<div class="card">
+<h3>Bienestar</h3>
+<p id="frase"></p>
+</div>
+
+<div class="card">
+<h3>Perfil</h3>
+<img id="avatar" width="80">
+<p id="perfil"></p>
+</div>
+
+<div class="nav">
+<button onclick="mostrar('todo')">Inicio</button>
+</div>
+
+</div>
+
+<script>
+
+let selectedDay=0;
+
+function login(){
+let n=document.getElementById("name").value;
+localStorage.setItem("name",n);
+if(!localStorage.getItem("start")){
+localStorage.setItem("start",Date.now());
+}
+init();
+}
+
+function init(){
+document.getElementById("login").style.display="none";
+document.getElementById("app").style.display="block";
+
+let n=localStorage.getItem("name");
+document.getElementById("saludo").innerText="Hola "+n;
+
+let start=localStorage.getItem("start");
+let days=Math.floor((Date.now()-start)/(1000*60*60*24));
+document.getElementById("tiempo").innerText=days+" días";
+
+avatar();
+calendar();
+loadLibros();
+frase();
+loadPodcast();
+loadForo();
+}
+
+function avatar(){
+let n=localStorage.getItem("name");
+document.getElementById("avatar").src=
+"https://ui-avatars.com/api/?name="+n+"&background=6C63FF&color=fff";
+document.getElementById("perfil").innerText=n;
+}
+
+/* CALENDARIO */
+function calendar(){
+let cal=document.getElementById("calendar");
+let dias=["L","M","M","J","V","S","D"];
+cal.innerHTML="";
+dias.forEach((d,i)=>{
+let div=document.createElement("div");
+div.className="day";
+div.innerText=d;
+div.onclick=()=>{selectedDay=i;loadTasks();}
+cal.appendChild(div);
+});
+}
+
+function addTask(){
+let t=document.getElementById("taskInput").value;
+let data=JSON.parse(localStorage.getItem("tasks"))||{};
+if(!data[selectedDay])data[selectedDay]=[];
+data[selectedDay].push(t);
+localStorage.setItem("tasks",JSON.stringify(data));
+loadTasks();
+}
+
+function loadTasks(){
+let ul=document.getElementById("tasks");
+ul.innerHTML="";
+let data=JSON.parse(localStorage.getItem("tasks"))||{};
+(data[selectedDay]||[]).forEach(t=>{
+let li=document.createElement("li");
+li.innerText=t;
+ul.appendChild(li);
+});
+}
+
+/* PODCAST */
+function postPodcast(){
+let m=document.getElementById("podMsg").value;
+let arr=JSON.parse(localStorage.getItem("pod"))||[];
+arr.push(m);
+localStorage.setItem("pod",JSON.stringify(arr));
+loadPodcast();
+}
+function loadPodcast(){
+let ul=document.getElementById("podList");
+ul.innerHTML="";
+(JSON.parse(localStorage.getItem("pod"))||[]).forEach(m=>{
+let li=document.createElement("li");
+li.innerText=m;
+ul.appendChild(li);
+});
+}
+
+/* FORO IA */
+function postForo(){
+let m=document.getElementById("foroMsg").value;
+let arr=JSON.parse(localStorage.getItem("foro"))||[];
+arr.push("Usuario: "+m);
+
+if(m.includes("estres")){
+arr.push("IA: Respira profundo y organiza tus tareas.");
+}else if(m.includes("tiempo")){
+arr.push("IA: Divide tus actividades en bloques.");
+}else{
+arr.push("IA: Sigue adelante, puedes lograrlo.");
+}
+
+localStorage.setItem("foro",JSON.stringify(arr));
+loadForo();
+}
+function loadForo(){
+let ul=document.getElementById("foroList");
+ul.innerHTML="";
+(JSON.parse(localStorage.getItem("foro"))||[]).forEach(m=>{
+let li=document.createElement("li");
+li.innerText=m;
+ul.appendChild(li);
+});
+}
+
+/* LIBROS */
+function loadLibros(){
+let libros=[
+"Hábitos Atómicos","Padre Rico Padre Pobre","El Poder del Ahora",
+"Los 7 hábitos","Inteligencia emocional"
+];
+let ul=document.getElementById("libros");
+libros.forEach(l=>{
+let li=document.createElement("li");
+li.innerText=l;
+ul.appendChild(li);
+});
+}
+
+/* EMPLEO IA */
+function buscarTrabajo(){
+let q=document.getElementById("jobInput").value;
+document.getElementById("jobResult").innerText=
+"Recomendación: busca "+q+" en tu ciudad en plataformas como LinkedIn.";
+}
+
+/* FRASES */
+function frase(){
+let frases=[
+"Vas bien, sigue así",
+"No te rindas",
+"Un día a la vez",
+"Tu esfuerzo vale"
+];
+document.getElementById("frase").innerText=
+frases[Math.floor(Math.random()*frases.length)];
+}
+
+if(localStorage.getItem("name")){
+init();
+}
+
+</body>
+
+<script src="script.js"></script>
+
+</html>
